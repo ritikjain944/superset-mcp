@@ -31,9 +31,11 @@ x-superset-volumes:
 
 x-common-build: &common-build
   context: .
-  target: dev
+  target: lean
   cache_from:
     - apache/superset-cache:3.10-slim-trixie
+  args:
+    DEV_MODE: "false"
 
 services:
   redis:
@@ -74,6 +76,10 @@ services:
       superset-init:
         condition: service_completed_successfully
     volumes: *superset-volumes
+    environment:
+      FLASK_DEBUG: "false"
+      DEV_MODE: "false"
+      SUPERSET_ENV: production
 
   superset-init:
     container_name: superset_init
@@ -92,6 +98,10 @@ services:
         condition: service_started
     user: "root"
     volumes: *superset-volumes
+    environment:
+      FLASK_DEBUG: "false"
+      DEV_MODE: "false"
+      SUPERSET_ENV: production
     healthcheck:
       disable: true
 
@@ -111,6 +121,10 @@ services:
         condition: service_completed_successfully
     user: "root"
     volumes: *superset-volumes
+    environment:
+      FLASK_DEBUG: "false"
+      DEV_MODE: "false"
+      SUPERSET_ENV: production
     healthcheck:
       test:
         [
@@ -134,8 +148,44 @@ services:
         condition: service_completed_successfully
     user: "root"
     volumes: *superset-volumes
+    environment:
+      FLASK_DEBUG: "false"
+      DEV_MODE: "false"
+      SUPERSET_ENV: production
     healthcheck:
       disable: true
+
+  superset-mcp:
+    build:
+      <<: *common-build
+    container_name: superset_mcp
+    command: ["/app/docker/docker-bootstrap.sh", "mcp"]
+    env_file:
+      - path: docker/.env # default
+        required: true
+      - path: docker/.env-local # optional override
+        required: false
+    restart: unless-stopped
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    user: "root"
+    volumes: *superset-volumes
+    ports:
+      - "${MCP_PORT:-5008}:5008"
+    environment:
+      MCP_PORT: ${MCP_PORT:-5008}
+      FLASK_DEBUG: "false"
+      DEV_MODE: "false"
+      SUPERSET_ENV: production
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - '[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://127.0.0.1:5008/mcp)" = "405" ]'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 240s
 
 volumes:
   superset_home:

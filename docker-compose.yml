@@ -256,6 +256,36 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "celery inspect ping -A superset.tasks.celery_app:app -d celery@$$HOSTNAME"]
 
+  superset-mcp:
+    env_file:
+      - path: docker/.env # default
+        required: true
+      - path: docker/.env-local # optional override
+        required: false
+    build:
+      <<: *common-build
+    command: ["/app/docker/docker-bootstrap.sh", "mcp"]
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    user: *superset-user
+    depends_on:
+      superset-init:
+        condition: service_completed_successfully
+    volumes: *superset-volumes
+    ports:
+      - "${MCP_PORT:-5008}:5008"
+    environment:
+      MCP_PORT: ${MCP_PORT:-5008}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - '[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://127.0.0.1:5008/mcp)" = "405" ]'
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 240s
+
 volumes:
   superset_home:
     external: false

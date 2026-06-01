@@ -105,6 +105,27 @@ class CeleryConfig:
 
 CELERY_CONFIG = CeleryConfig
 
+# from flask import redirect, render_template, current_app
+# from flask_login import current_user
+# from flask_appbuilder import expose, IndexView
+
+# class CustomIndexView(IndexView):
+#     @expose("/")
+#     def index(self):
+#         # 1. Custom redirect for your restricted role
+#         if not current_user.is_anonymous:
+#             # Safely fetch roles, defaulting to an empty list
+#             roles = [r.name for r in getattr(current_user, 'roles', [])]
+#             if "Dashboard_Only_Viewer" in roles:
+#                 return redirect("/superset/dashboard/videogame/")
+        
+#         # 2. For Admins, other users, and Logged-Out/Anonymous users:
+#         # Simply serve the standard React app and let Superset handle the rest natively!
+#         return render_template("superset/spa.html", entry="spa", appbuilder=current_app.appbuilder)
+
+# # Override the default index view in superset_config.py
+# FAB_INDEX_VIEW = f"{CustomIndexView.__module__}.CustomIndexView"
+
 FEATURE_FLAGS = {
     "ALERT_REPORTS": True,
     "DATASET_FOLDERS": True,
@@ -116,9 +137,19 @@ ALERT_REPORTS_NOTIFICATION_DRY_RUN = True
 WEBDRIVER_BASEURL = f"http://superset_app{os.environ.get('SUPERSET_APP_ROOT', '/')}/"  # When using docker compose baseurl should be http://superset_nginx{ENV{BASEPATH}}/  # noqa: E501
 # The base URL for the email report hyperlinks.
 WEBDRIVER_BASEURL_USER_FRIENDLY = (
-    f"http://localhost:8888/{os.environ.get('SUPERSET_APP_ROOT', '/')}/"
+    f"http://localhost:{os.environ.get('NODE_PORT', '8088')}/{os.environ.get('SUPERSET_APP_ROOT', '/')}/"
 )
 SQLLAB_CTAS_NO_LIMIT = True
+
+# MCP development defaults for the Docker dev stack. Authentication remains off
+# and requests run as the configured Superset user.
+MCP_AUTH_ENABLED = False
+MCP_DEV_USERNAME = os.getenv("MCP_DEV_USERNAME", "admin")
+MCP_SERVICE_PORT = int(os.getenv("MCP_PORT", "5008"))
+MCP_SERVICE_URL = os.getenv(
+    "MCP_SERVICE_URL",
+    f"http://localhost:{os.getenv('NODE_PORT', '9001')}",
+)
 
 log_level_text = os.getenv("SUPERSET_LOG_LEVEL", "INFO")
 LOG_LEVEL = getattr(logging, log_level_text.upper(), logging.INFO)

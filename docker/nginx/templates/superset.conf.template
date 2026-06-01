@@ -15,6 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
+upstream superset_mcp {
+    server superset-mcp:5008;
+    keepalive 100;
+}
+
 upstream superset_app {
     server host.docker.internal:8088;
     keepalive 100;
@@ -41,6 +46,19 @@ server {
         proxy_pass http://host.docker.internal:9000;  # Proxy to superset-node
         proxy_http_version 1.1;
         proxy_set_header Host $host;
+    }
+
+    # MCP service proxy
+    location /mcp {
+        proxy_pass http://superset_mcp;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 300;
+        proxy_read_timeout 300;
+        proxy_buffering off;
     }
 
     location ${SUPERSET_APP_ROOT} {
