@@ -87,6 +87,12 @@ case "${1}" in
     /usr/bin/run-server.sh
     ;;
   mcp)
+    echo "Installing MCP requirements..."
+    if command -v uv > /dev/null 2>&1; then
+        uv pip install -e .[fastmcp]
+    else
+        pip install -e .[fastmcp]
+    fi
     echo "Starting MCP service..."
     MCP_DEBUG_FLAG=""
     if [ "$FLASK_DEBUG" = "true" ]; then

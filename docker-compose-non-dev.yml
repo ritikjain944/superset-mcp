@@ -31,7 +31,7 @@ x-superset-volumes:
 
 x-common-build: &common-build
   context: .
-  target: lean
+  target: dev
   cache_from:
     - apache/superset-cache:3.10-slim-trixie
   args:
@@ -71,7 +71,7 @@ services:
     user: "root"
     restart: unless-stopped
     ports:
-      - 8088:8088
+      - "8098:8088"
     depends_on:
       superset-init:
         condition: service_completed_successfully
